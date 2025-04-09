@@ -2,14 +2,37 @@ import MessageInput from "./MessageInput";
 import Messages from "./Messages";
 import { TiMessages } from "react-icons/ti";
 import useConversation from "../../zustand/useConversation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthContext } from "../../context/AuthContext";
+import { useSocketContext } from "../../context/SocketContext";
 const MessageContainer = () => {
   const { selectedConversation, setSelectedConversation } = useConversation();
+
+  const { socket } = useSocketContext();
+  const [isTyping, setIsTyping] = useState(false);
+
   useEffect(() => {
+    if (!socket) return;
+
+    const handleTyping = () => {
+      console.log("📥 Received 'typing' event");
+      setIsTyping(true);
+    };
+
+    const handleStopTyping = () => {
+      console.log("📥 Received 'stopTyping' event");
+      setIsTyping(false);
+    };
+
+    socket.on("typing", handleTyping);
+    socket.on("stopTyping", handleStopTyping);
     // cleanup function (unmounts)
-    return () => setSelectedConversation(null);
-  }, [setSelectedConversation]);
+    return () => {
+      socket.off("typing");
+      socket.off("stopTyping");
+      setSelectedConversation(null);
+    };
+  }, [socket, setSelectedConversation]);
   return (
     <div className="md:min-w-[450px] flex flex-col">
       {!selectedConversation ? (
@@ -24,6 +47,11 @@ const MessageContainer = () => {
             </span>
           </div>
           <Messages />
+          {isTyping && (
+            <div className="text-xs italic px-4 text-gray-400 mb-1">
+              Typing...
+            </div>
+          )}
           <MessageInput />
         </>
       )}

@@ -1,9 +1,11 @@
+import { useMemo } from "react";
 import { useAuthContext } from "../../context/AuthContext";
 import { useSocketContext } from "../../context/SocketContext";
 import useConversation from "../../zustand/useConversation";
 
 const Conversation = ({ conversation, lastIdx, emoji }) => {
-  const { selectedConversation, setSelectedConversation } = useConversation();
+  const { selectedConversation, setSelectedConversation, setSelectedProfile } =
+    useConversation();
 
   const isSelected = selectedConversation?._id === conversation._id;
   const { onlineUsers } = useSocketContext();
@@ -12,11 +14,26 @@ const Conversation = ({ conversation, lastIdx, emoji }) => {
   // const otherUserId = conversation.participants.find(
   //   (id) => id !== authUser._id
   // );
-  console.log("conversation", conversation);
-  const isOnline = onlineUsers.includes(conversation._id);
-  console.log(onlineUsers);
+  // console.log("conversation", conversation);
+  // console.log(onlineUsers);
 
+  console.log(
+    "Checking isOnline for:",
+    conversation.fullName,
+    conversation._id
+  );
+  console.log("Online users from context:", onlineUsers);
+
+  const isOnline = useMemo(() => {
+    if (!Array.isArray(onlineUsers) || onlineUsers.length === 0) return false;
+    return onlineUsers.includes(conversation._id);
+  }, [onlineUsers, conversation._id]);
   console.log(isOnline);
+
+  const handleProfileClick = (e) => {
+    e.stopPropagation(); // prevent selecting conversation
+    setSelectedProfile(conversation); // open profile view
+  };
 
   return (
     <>
@@ -28,7 +45,11 @@ const Conversation = ({ conversation, lastIdx, emoji }) => {
       >
         <div className={`avatar ${isOnline ? "online" : ""}`}>
           <div className="w-12 rounded-full">
-            <img src={conversation.profilePic} alt="user avatar" />
+            <img
+              src={conversation.profilePic}
+              alt="user avatar"
+              onClick={handleProfileClick}
+            />
           </div>
         </div>
 
